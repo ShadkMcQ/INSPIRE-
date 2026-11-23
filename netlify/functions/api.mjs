@@ -12,7 +12,7 @@ const key=()=>process.env.INSPIRE_SESSION_SECRET || process.env.INSPIRE_ADMIN_PA
 const sign=(s)=>createHmac('sha256',key()).update(s).digest('hex');
 const token=()=>{const payload=Buffer.from(JSON.stringify({exp:Date.now()+12*60*60*1000,nonce:randomBytes(8).toString('hex')})).toString('base64url');return payload+'.'+sign(payload)};
 function authorized(ev){const t=(ev.headers.authorization||ev.headers.Authorization||'').replace(/^Bearer\s+/i,'');const [payload,sig]=t.split('.');if(!payload||!sig||!key())return false;const expected=sign(payload);if(sig.length!==expected.length||!timingSafeEqual(Buffer.from(sig),Buffer.from(expected)))return false;try{return JSON.parse(Buffer.from(payload,'base64url').toString()).exp>Date.now()}catch{return false}}
-const store=()=>getStore({name:'inspire-events',consistency:'strong'});
+const store=()=>getStore('inspire-events');
 const ekey=(code)=>`event-${code}`;
 const rkey=(code,q,p)=>`response-${code}-${q}-${p}`;
 async function getEvent(db,code){return await db.get(ekey(clean(code,16).toUpperCase()),{type:'json'});}
