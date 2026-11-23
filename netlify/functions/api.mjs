@@ -1,4 +1,4 @@
-import { getStore } from '@netlify/blobs';
+import { getStore, connectLambda } from '@netlify/blobs';
 import { randomBytes, createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
 
 const json=(status,data)=>({statusCode:status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'},body:JSON.stringify(data)});
@@ -26,6 +26,8 @@ function seed(){return [
  {type:'qa',title:'What would you like to ask Marsha?',visibility:'moderated',identity_mode:'optional'}
  ].map((q,i)=>({...q,id:randomUUID(),event_id:'INSPIRE26',options:[],status:'draft',sort_order:i,correct_index:null}));}
 export async function handler(ev){
+ connectLambda(ev);
+
  if(ev.httpMethod==='OPTIONS')return json(200,{});
 
  const path=decodeURIComponent((ev.path||'').split('/').pop());const method=ev.httpMethod;
