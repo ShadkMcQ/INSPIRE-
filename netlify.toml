@@ -1,0 +1,8 @@
+[build]
+command = "npm ci --no-audit --no-fund"
+publish = "public"
+functions = "netlify/functions"
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/api/:splat"
+status = 200
