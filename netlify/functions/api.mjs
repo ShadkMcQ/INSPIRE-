@@ -1,7 +1,7 @@
-import { getStore, connectLambda } from '@netlify/blobs';
+import { getStore } from '@netlify/blobs';
 import { randomBytes, createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
 
-const json=(status,data)=>({statusCode:status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'},body:JSON.stringify(data)});
+const json=(status,data)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const error=(s,m)=>json(s,{error:m});
 const clean=(v,n=1200)=>String(v??'').trim().slice(0,n);
 const validTypes=['reflection','wordcloud','poll','quiz','qa','scale'];
@@ -25,14 +25,14 @@ function seed(){return [
  {type:'wordcloud',title:'In one word, what does coming up higher mean to you?',visibility:'moderated',identity_mode:'anonymous'},
  {type:'qa',title:'What would you like to ask Marsha?',visibility:'moderated',identity_mode:'optional'}
  ].map((q,i)=>({...q,id:randomUUID(),event_id:'INSPIRE26',options:[],status:'draft',sort_order:i,correct_index:null}));}
-export async function handler(ev){
- connectLambda(ev);
+export default async function handler(request){
+ const method=request.method;
+ if(method==='OPTIONS')return json(200,{});
 
- if(ev.httpMethod==='OPTIONS')return json(200,{});
-
- const path=decodeURIComponent((ev.path||'').split('/').pop());const method=ev.httpMethod;
- let body={};try{body=JSON.parse(ev.body||'{}')}catch{return error(400,'Invalid JSON')}
- const query=ev.queryStringParameters||{};
+ const url=new URL(request.url);
+ const path=decodeURIComponent(url.pathname.split('/').pop());
+ let body={};try{body=JSON.parse((await request.text())||'{}')}catch{return error(400,'Invalid JSON')}
+ const query=Object.fromEntries(url.searchParams);
  try{
   const db=store();
   if(path==='login'&&method==='POST'){
